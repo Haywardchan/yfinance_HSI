@@ -88,7 +88,7 @@ def preprocess_df(file_txt, periods = ["1mo", "1y", "5y"]):
             df = df.dropna(subset=['Open'])
 
             # Calculate the return and add it as a new column
-            df['Return (%)'] = (df['Close'] / df['Close'].shift(1) - 1)
+            df['Return (%)'] = (df['Close'] / df['Close'].shift(1) - 1) * 100
             df.loc[0, 'Return (%)'] = 0
 
             # Save the updated DataFrame back to a CSV file
@@ -122,7 +122,7 @@ def calculate_stock_return(csv_file, start_date, end_date):
     end_price = df['Close'].iloc[-1]
     return_pct = (end_price - start_price) / start_price
 
-    return return_pct
+    return return_pct * 100
 
 def calculate_risk_and_sharpe_ratio(file_txt, periods = ["1mo", "1y", "5y"]):
     risks, returns, sharpes, correlation = ["Risk"], ["ROI"], ["Sharpe Ratio"], ["Correlation to HSI"]
@@ -134,10 +134,10 @@ def calculate_risk_and_sharpe_ratio(file_txt, periods = ["1mo", "1y", "5y"]):
             df = pd.read_csv(f"data_{period}/{code}_{period}.csv")
             # Calculate the overall Risk and Sharpe ratio of the stock
             # Risk of the stock
-            stock_risk = df['Return (%)'].std()
+            stock_risk = df['Return (%)'].std() * np.sqrt(df.shape[0])
             # Sharpe ratio
             stock_TROI = calculate_stock_return(f"data_{period}/{code}_{period}.csv", '2023-06-12', '2024-06-11')
-            stock_sharpe = stock_TROI / stock_risk
+            stock_sharpe = stock_TROI / stock_risk 
             # Correlation to HSI
             # print(hsi['Return (%)'].shape, df['Return (%)'].shape, code)
             coeff = np.corrcoef(df['Return (%)'], hsi['Return (%)'])[0, 1]
