@@ -151,7 +151,7 @@ def calculate_risk_and_sharpe_ratio(file_txt, periods = ["1mo", "1y", "5y"]):
         
 def save_csv_to_postgreSQL(csvfile):
     import psycopg2
-    conn = psycopg2.connect(host="localhost", dbname="finance", user='postgres', password="1234", port="5432")
+    conn = psycopg2.connect(host="localhost", dbname="finance", user='dev', password="93148325", port="5432")
     cur = conn.cursor()
     # Do sth
     cur.execute("""
@@ -180,7 +180,7 @@ def save_csv_to_postgreSQL(csvfile):
     conn.close()
 
 if __name__ == "__main__":
-    Not_downloaded = False
+    Not_downloaded = True
     stock_txt = 'HSI_stocks.txt'
     if Not_downloaded:
         download_stock_from_txt(stock_txt, ["1y"])
