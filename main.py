@@ -124,8 +124,8 @@ def calculate_stock_return(csv_file, start_date, end_date):
 
     return return_pct * 100
 
-def calculate_risk_and_sharpe_ratio(file_txt, periods = ["1mo", "1y", "5y"]):
-    risks, returns, sharpes, correlation = ["Risk"], ["ROI"], ["Sharpe Ratio"], ["Correlation to HSI"]
+def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"]):
+    risks, returns, sharpes, correlation, pe, VaR, names = ["risk"], ["roi"], ["sharpe_ratio"], ["correlation_to_hsi"], ["PE_ratio"], ["var"], ["stock_name"]
     tickers = read_stock_codes_from_file(file_txt)
     for period in periods:
         hsi = pd.read_csv(f"data_{period}/^HSI_{period}.csv")
@@ -141,11 +141,27 @@ def calculate_risk_and_sharpe_ratio(file_txt, periods = ["1mo", "1y", "5y"]):
             # Correlation to HSI
             # print(hsi['Return (%)'].shape, df['Return (%)'].shape, code)
             coeff = np.corrcoef(df['Return (%)'], hsi['Return (%)'])[0, 1]
+            # P/E ratio
+            print(code)
+            stk_info = yf.Ticker(code).info
+            try:
+                stock_PE_ratio = round(stk_info["currentPrice"] / stk_info["trailingEps"], 2)
+            except:
+                stock_PE_ratio = 0
+                print(f"key error occurs in {code}")
+            # 95% VaR
+            stock_VaR = df['Return (%)'].std() * 1.65
+            # Stock Name
+            stkname = stk_info["longName"]
             risks.append(stock_risk)
             returns.append(stock_TROI)
             sharpes.append(stock_sharpe)
             correlation.append(coeff)
-        df = [["Stock"] + tickers, risks, returns, sharpes, correlation]
+            pe.append(stock_PE_ratio)
+            VaR.append(stock_VaR)
+            names.append(stkname)
+        df = [["stock_id"] + tickers, names, risks, returns, sharpes, correlation, pe, VaR]
+        save_df_to_postgresql(lists_to_df(df[:][1:]), "finance", "stock_performance")
         output(df, f"HSI_{period}")
         print(f"exported HSI_{period}.csv")
         
@@ -154,38 +170,68 @@ def save_csv_to_postgreSQL(csvfile):
     conn = psycopg2.connect(host="localhost", dbname="finance", user='postgres', password="1234", port="5432")
     cur = conn.cursor()
     # Do sth
-    cur.execute("""
-    CREATE TABLE stock_performance (
-        id SERIAL PRIMARY KEY,
-        stock_name VARCHAR(50) NOT NULL,
-        risk DECIMAL(10,2) NOT NULL,
-        roi DECIMAL(10,2) NOT NULL,
-        sharpe_ratio DECIMAL(10,2) NOT NULL,
-        correlation_to_hsi DECIMAL(10,2) NOT NULL
-    );
-    """)
+    try:
+        cur.execute("""
+        CREATE TABLE stock_performance (
+            id SERIAL PRIMARY KEY,
+            stock_id VARCHAR(50) NOT NULL,
+            stock_name VARCHAR(100) NOT NULL,
+            risk DECIMAL(10,2) NOT NULL,
+            roi DECIMAL(10,2) NOT NULL,
+            sharpe_ratio DECIMAL(10,2) NOT NULL,
+            correlation_to_hsi DECIMAL(10,2) NOT NULL,
+            PE_ratio DECIMAL(10,2) NOT NULL,
+            VaR DECIMAL(10,2) NOT NULL
+        );
+        """)
+    except:
+        print('The table exists')
     # Open the CSV file and read the data
     with open(csvfile, 'r') as file:
         reader = csv.reader(file)
         next(reader)  # Skip the header row
         # Insert the data into the PostgreSQL table
         for row in reader:
-            stock_name, risk, roi, sharpe_ratio, correlation_to_hsi = row
-            cur.execute("INSERT INTO stock_performance (stock_name, risk, roi, sharpe_ratio, correlation_to_hsi) VALUES (%s, %s, %s, %s, %s)", 
-                    (stock_name, risk, roi, sharpe_ratio, correlation_to_hsi))
+            stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR = row
+            cur.execute("INSERT INTO stock_performance (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                    (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR))
 
     # Commit the changes and close the connection
     conn.commit()
     cur.close()
     conn.close()
 
+def save_df_to_postgresql(df, database_name, table_name = "finance", user='postgres', password='1234'):
+    from sqlalchemy import create_engine
+    """
+    Saves a Pandas DataFrame to a PostgreSQL database.
+
+    Parameters:
+    df (pandas.DataFrame): The DataFrame to be saved.
+    table_name (str): The name of the table to be created/updated.
+    user (str): The username for the PostgreSQL database (default is 'your_username').
+    password (str): The password for the PostgreSQL database (default is 'your_password').
+    """
+    # Create a SQLAlchemy engine to connect to the PostgreSQL database
+    engine = create_engine(f'postgresql://{user}:{password}@localhost:5432/{database_name}')
+
+    # Write the DataFrame to the PostgreSQL database
+    df.iloc[1:].to_sql(table_name, engine, if_exists='replace', index=False)
+
+    print(f"DataFrame saved to PostgreSQL table '{table_name}' in {database_name}.")
+
+def lists_to_df(lists):
+    list_transposed = list(zip(*lists))
+    return pd.DataFrame(list_transposed, columns=list_transposed[0])
+
 if __name__ == "__main__":
     Not_downloaded = False
     stock_txt = 'HSI_stocks.txt'
     if Not_downloaded:
-        download_stock_from_txt(stock_txt, ["1y"])
-        preprocess_df(stock_txt, ["1y"])
-        calculate_risk_and_sharpe_ratio(stock_txt, ["1y"])
+        # download_stock_from_txt(stock_txt, ["1y"])
+        # preprocess_df(stock_txt, ["1y"])
+        calculate_KPIs(stock_txt, ["1y"])
     save_csv_to_postgreSQL('HSI_1y.csv')
+
 
             
