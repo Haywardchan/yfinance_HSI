@@ -21,18 +21,20 @@ df = pd.read_csv('data_1y/2388.HK_1y.csv')
 # plt.legend()
 # plt.show()
 
-# Extract the necessary data
-stock_dates = df['Date']
-stock_volume = df['Volume']
+# # Extract the necessary data
+# stock_dates = df['Date']
+# stock_volume = df['Volume']
 
-# Plot the volume
-fig, ax = plt.subplots(figsize=(12, 6))
+# # Plot the volume
+# fig, ax = plt.subplots(figsize=(12, 6))
 
-ax.bar(stock_dates, stock_volume, color='blue')
-ax.set_title('Trading Volume for 2388.HK')
-ax.set_xlabel('Date')
-ax.set_ylabel('Volume')
-ax.grid(True)
+# ax.bar(stock_dates, stock_volume, color='blue')
+# ax.set_title('Trading Volume for 2388.HK')
+# ax.set_xlabel('Date')
+# ax.set_ylabel('Volume')
+# ax.grid(True)
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
+
+print(yf.Ticker('000016.SS').info)
