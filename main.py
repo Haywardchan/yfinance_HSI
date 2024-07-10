@@ -48,6 +48,60 @@ def download_stock_data(output_file, stock_code, period="1mo"):
     df.to_csv(output_file)
     print(f"Stock data for {stock_code} ({period}) saved to {output_file}")
 
+def plot_price_graph(output_file, stock_code, period="1mo"):
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    # Get the directory of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the 'data' folder path
+    data_folder = os.path.join(script_dir, 'charts' + '_' + period)
+    # Construct the output file path
+    output_file = os.path.join(data_folder, output_file)
+    # Create the 'charts' folder if it doesn't exist
+    os.makedirs(data_folder, exist_ok = True)
+    df = pd.read_csv(f'data_{period}/{stock_code}_{period}.csv')
+    # Plot the close price
+    fig = plt.figure(figsize=(12, 6))
+    plt.plot(df['Date'], df['Close'])
+    # plt.plot(df['Date'], df['Return (%)'], color="blue")
+    plt.title('Stock Price Trend')
+    plt.xlabel('Date')
+    plt.ylabel('Return')
+    plt.grid(True)
+    plt.savefig(output_file)
+    plt.close(fig)
+    print(f"Stock price chart for {stock_code} ({period}) saved to {output_file}")
+
+def plot_volume_graph(output_file, stock_code, period="1mo"):
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    # Get the directory of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the 'data' folder path
+    data_folder = os.path.join(script_dir, 'charts' + '_' + period)
+    # Construct the output file path
+    output_file = os.path.join(data_folder, output_file)
+    # Create the 'charts' folder if it doesn't exist
+    os.makedirs(data_folder, exist_ok = True)
+    df = pd.read_csv(f'data_{period}/{stock_code}_{period}.csv')
+    # Extract the necessary data
+    stock_dates = df['Date']
+    stock_volume = df['Volume']
+
+    # Plot the volume
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    ax.bar(stock_dates, stock_volume, color='blue')
+    ax.set_title('Trading Volume for 1299.HK')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Volume')
+    ax.grid(True)
+
+    plt.tight_layout()
+    plt.savefig(output_file)
+    plt.close(fig)
+    print(f"Stock price chart for {stock_code} ({period}) saved to {output_file}")
+
 def read_stock_codes_from_file(filename):
     """
     Reads stock codes from a text file and stores them in a Python list.
@@ -76,6 +130,13 @@ def download_stock_from_txt(file_txt, periods = ["1mo", "1y", "5y"]):
     for code in tickers:
         for period in periods:
             download_stock_data(code + '_' + period + '.csv', code, period = period)
+
+def plot_graphs_from_txt(file_txt, periods = ["1mo", "1y", "5y"]):
+    tickers = read_stock_codes_from_file(file_txt)
+    for code in tickers:
+        for period in periods:
+            plot_price_graph('P' + code + '_' + period + '.png', code, period)
+            plot_volume_graph('V' + code + '_' + period + '.png', code, period)
 
 def preprocess_df(file_txt, periods = ["1mo", "1y", "5y"]):
     tickers = read_stock_codes_from_file(file_txt)
@@ -125,7 +186,7 @@ def calculate_stock_return(csv_file, start_date, end_date):
     return return_pct * 100
 
 def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
-    risks, returns, sharpes, correlation, pe, VaR, names = ["risk"], ["roi"], ["sharpe_ratio"], ["correlation_to_hsi"], ["PE_ratio"], ["var"], ["stock_name"]
+    risks, returns, sharpes, correlation, pe, VaR, names, price_charts, volume_charts = ["risk"], ["roi"], ["sharpe_ratio"], ["correlation_to_hsi"], ["PE_ratio"], ["var"], ["stock_name"], [], []
     tickers = read_stock_codes_from_file(file_txt)
     for period in periods:
         if index == "HSI":
@@ -140,14 +201,16 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
             stock_risk = df['Return (%)'].std() * np.sqrt(df.shape[0])
             # Sharpe ratio
             try:
-                stock_TROI = calculate_stock_return(f"data_{period}/{code}_{period}.csv", '2023-06-12', '2024-06-11')
+                stock_TROI = calculate_stock_return(f"data_{period}/{code}_{period}.csv", '2023-07-10', '2024-07-09')
             except:
                 stock_TROI = 0
                 print(f"TROI cannot be calculated for {code}")
             stock_sharpe = stock_TROI / stock_risk 
             # Correlation to HSI
-            # print(hsi['Return (%)'].shape, df['Return (%)'].shape, code)
-            coeff = np.corrcoef(df['Return (%)'], hsi['Return (%)'])[0, 1]
+            try:
+                coeff = np.corrcoef(df['Return (%)'], hsi['Return (%)'])[0, 1]
+            except:
+                print(hsi['Return (%)'].shape, df['Return (%)'].shape, code)
             # P/E ratio
             stk_info = yf.Ticker(code).info
             try:
@@ -159,6 +222,16 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
             stock_VaR = df['Return (%)'].std() * 1.65
             # Stock Name
             stkname = stk_info["longName"]
+            # Price Trend Graph
+            with open(f"charts_{period}/P{code}_{period}.png", 'rb') as f:
+                binary_data = f.read()
+            price_charts.append(binary_data)
+            f.close()
+            # Price Trend Graph
+            with open(f"charts_{period}/V{code}_{period}.png", 'rb') as f:
+                binary_data = f.read()
+            volume_charts.append(binary_data)
+            f.close()
             risks.append(stock_risk)
             returns.append(stock_TROI)
             sharpes.append(stock_sharpe)
@@ -168,11 +241,12 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
             names.append(stkname)
             print(f"KPI of {code} is calculated")
         df = [["stock_id"] + tickers, names, risks, returns, sharpes, correlation, pe, VaR]
-        save_df_to_postgresql(lists_to_df(df[:][1:]), "finance", "stock_performance")
+        # save_df_to_postgresql(lists_to_df(df[:][1:]), "finance", "stock_performance")
         output(df, f"{index}_{period}")
         print(f"exported {index}_{period}.csv")
+        return [price_charts, volume_charts]
         
-def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance"):
+def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance", assets = []):
     import psycopg2
     conn = psycopg2.connect(host="localhost", dbname="finance", user='dev', password="93148325", port="5432")
     cur = conn.cursor()
@@ -189,7 +263,9 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance"):
             sharpe_ratio DECIMAL(10,2) NOT NULL,
             correlation_to_hsi DECIMAL(10,2) NOT NULL,
             PE_ratio DECIMAL(10,2) NOT NULL,
-            VaR DECIMAL(10,2) NOT NULL
+            VaR DECIMAL(10,2) NOT NULL,
+            price_chart BYTEA NOT NULL,
+            volume_chart BYTEA NOT NULL
         );
         """)
     except:
@@ -199,10 +275,10 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance"):
         reader = csv.reader(file)
         next(reader)  # Skip the header row
         # Insert the data into the PostgreSQL table
-        for row in reader:
+        for idx, row in enumerate(reader):
             stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR = row
-            cur.execute(f"INSERT INTO {table_name} (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
-                    (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR))
+            cur.execute(f"INSERT INTO {table_name} (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR, price_chart, volume_chart) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+                    (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR, assets[0][idx], assets[1][idx]))
 
     # Commit the changes and close the connection
     conn.commit()
@@ -234,21 +310,22 @@ def lists_to_df(lists):
     return pd.DataFrame(list_transposed, columns=list_transposed[0])
 
 def hsi():
-    Not_downloaded = False
+    Not_downloaded = True
     stock_txt = 'HSI_stocks.txt'
     if Not_downloaded:
-        download_stock_from_txt(stock_txt, ["1y"])
-        preprocess_df(stock_txt, ["1y"])
-        calculate_KPIs(stock_txt, ["1y"])
-    save_csv_to_postgreSQL('HSI_1y.csv')
+        # download_stock_from_txt(stock_txt, ["1y"])
+        # plot_graphs_from_txt(stock_txt, ["1y"])
+        # preprocess_df(stock_txt, ["1y"])
+        graphs = calculate_KPIs(stock_txt, ["1y"])
+    save_csv_to_postgreSQL('HSI_1y.csv', "stock_performance", graphs)
 
 def sse():
     Not_downloaded = True
     stock_txt = 'A_stocks.txt'
-    # if Not_downloaded:
-        # download_stock_from_txt(stock_txt, ["1y"])
-        # preprocess_df(stock_txt, ["1y"])
-        # calculate_KPIs(stock_txt, ["1y"], "000001.SS")
+    if Not_downloaded:
+        download_stock_from_txt(stock_txt, ["1y"])
+        preprocess_df(stock_txt, ["1y"])
+        calculate_KPIs(stock_txt, ["1y"], "000001.SS")
     save_csv_to_postgreSQL('000001.SS_1y.csv', "stock_performance_sse")
 
 if __name__ == "__main__":

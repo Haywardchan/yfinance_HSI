@@ -8,33 +8,33 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # # Assuming the CSV file is named 'stock_data.csv'
-df = pd.read_csv('data_1y/2388.HK_1y.csv')
+df = pd.read_csv('data_1y/1299.HK_1y.csv')
 # df2 = pd.read_csv('data_1y/^HSI_1y.csv')
 # # Plot the close price
 # plt.figure(figsize=(12, 6))
-# # plt.plot(df['Date'], df['Close'])
-# plt.plot(df['Date'], df['Return (%)'], color="blue")
-# plt.title('Day Return Trend')
+# plt.plot(df['Date'], df['Close'])
+# # plt.plot(df['Date'], df['Return (%)'], color="blue")
+# plt.title('Stock Price Trend')
 # plt.xlabel('Date')
 # plt.ylabel('Return')
 # plt.grid(True)
 # plt.legend()
 # plt.show()
 
-# # Extract the necessary data
-# stock_dates = df['Date']
-# stock_volume = df['Volume']
+# Extract the necessary data
+stock_dates = df['Date']
+stock_volume = df['Volume']
 
-# # Plot the volume
-# fig, ax = plt.subplots(figsize=(12, 6))
+# Plot the volume
+fig, ax = plt.subplots(figsize=(12, 6))
 
-# ax.bar(stock_dates, stock_volume, color='blue')
-# ax.set_title('Trading Volume for 2388.HK')
-# ax.set_xlabel('Date')
-# ax.set_ylabel('Volume')
-# ax.grid(True)
+ax.bar(stock_dates, stock_volume, color='blue')
+ax.set_title('Trading Volume for 1299.HK')
+ax.set_xlabel('Date')
+ax.set_ylabel('Volume')
+ax.grid(True)
 
-# plt.tight_layout()
-# plt.show()
+plt.tight_layout()
+plt.show()
 
 print(yf.Ticker('000016.SS').info)
