@@ -178,7 +178,7 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance"):
     cur = conn.cursor()
     # Do sth
     try:
-        # cur.execute("""ROLLBACK""")
+        cur.execute("""ROLLBACK""")
         cur.execute(f"""
         CREATE TABLE {table_name} (
             id SERIAL PRIMARY KEY,
