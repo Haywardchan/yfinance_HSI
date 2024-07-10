@@ -208,7 +208,9 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
             stock_sharpe = stock_TROI / stock_risk 
             # Correlation to HSI
             try:
-                coeff = np.corrcoef(df['Return (%)'], hsi['Return (%)'])[0, 1]
+                common_dates = pd.DataFrame({'Date': df['Date'].unique()})
+                common_dates = common_dates[common_dates['Date'].isin(hsi['Date'].unique())]
+                coeff = np.corrcoef(df[df['Date'].isin(common_dates['Date'])]['Return (%)'], hsi[hsi['Date'].isin(common_dates['Date'])]['Return (%)'])[0, 1]
             except:
                 print(hsi['Return (%)'].shape, df['Return (%)'].shape, code)
             # P/E ratio
@@ -251,25 +253,25 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance", assets = [
     conn = psycopg2.connect(host="localhost", dbname="finance", user='dev', password="93148325", port="5432")
     cur = conn.cursor()
     # Do sth
-    try:
-        cur.execute("""ROLLBACK""")
-        cur.execute(f"""
-        CREATE TABLE {table_name} (
-            id SERIAL PRIMARY KEY,
-            stock_id VARCHAR(50) NOT NULL,
-            stock_name VARCHAR(100) NOT NULL,
-            risk DECIMAL(10,2) NOT NULL,
-            roi DECIMAL(10,2) NOT NULL,
-            sharpe_ratio DECIMAL(10,2) NOT NULL,
-            correlation_to_hsi DECIMAL(10,2) NOT NULL,
-            PE_ratio DECIMAL(10,2) NOT NULL,
-            VaR DECIMAL(10,2) NOT NULL,
-            price_chart BYTEA NOT NULL,
-            volume_chart BYTEA NOT NULL
-        );
-        """)
-    except:
-        print('The table exists')
+    cur.execute("""ROLLBACK""")
+    cur.execute(f"""
+    DROP TABLE IF EXISTS {table_name}
+    """)
+    cur.execute(f"""
+    CREATE TABLE {table_name} (
+        id SERIAL PRIMARY KEY,
+        stock_id VARCHAR(50) NOT NULL,
+        stock_name VARCHAR(100) NOT NULL,
+        risk DECIMAL(10,2) NOT NULL,
+        roi DECIMAL(10,2) NOT NULL,
+        sharpe_ratio DECIMAL(10,2) NOT NULL,
+        correlation_to_hsi DECIMAL(10,2) NOT NULL,
+        PE_ratio DECIMAL(10,2) NOT NULL,
+        VaR DECIMAL(10,2) NOT NULL,
+        price_chart BYTEA NOT NULL,
+        volume_chart BYTEA NOT NULL
+    );
+    """)
     # Open the CSV file and read the data
     with open(csvfile, 'r') as file:
         reader = csv.reader(file)
