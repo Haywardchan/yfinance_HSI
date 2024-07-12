@@ -1,4 +1,5 @@
 import yfinance as yf
+from scipy.stats import norm
 import pandas as pd
 import numpy as np
 import csv
@@ -156,7 +157,7 @@ def preprocess_df(file_txt, periods = ["1mo", "1y", "5y"]):
             df.to_csv(f'data_{period}/{code}_{period}.csv')
             print(f"Appended Stock Return data for {code} ({period}) saved to {file_txt}")
 
-def calculate_stock_return(csv_file, start_date, end_date):
+def calculate_stock_return(csv_file):
     # print(calculate_stock_return('data_1y/0001.HK_1y.csv', '2023-06-12', '2024-06-11'))
     """
     Calculates the return of a stock based on the stock data in a CSV file.
@@ -171,12 +172,6 @@ def calculate_stock_return(csv_file, start_date, end_date):
     """
     # Load the stock data from the CSV file
     df = pd.read_csv(csv_file)
-
-    # Convert the date column to datetime
-    df['Date'] = pd.to_datetime(df['Date'])
-
-    # Filter the data for the specified date range
-    df = df[(df['Date'] >= start_date) & (df['Date'] <= end_date)]
 
     # Calculate the return
     start_price = df['Close'].iloc[0]
@@ -201,7 +196,7 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
             stock_risk = df['Return (%)'].std() * np.sqrt(df.shape[0])
             # Sharpe ratio
             try:
-                stock_TROI = calculate_stock_return(f"data_{period}/{code}_{period}.csv", '2023-07-10', '2024-07-09')
+                stock_TROI = calculate_stock_return(f"data_{period}/{code}_{period}.csv")
             except:
                 stock_TROI = 0
                 print(f"TROI cannot be calculated for {code}")
@@ -221,7 +216,7 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
                 stock_PE_ratio = 0
                 print(f"key error occurs in {code}")
             # 95% VaR
-            stock_VaR = df['Return (%)'].std() * 1.65
+            stock_VaR = norm.ppf(0.05) * df['Return (%)'].std() * np.sqrt(365/252)
             # Stock Name
             stkname = stk_info["longName"]
             # Price Trend Graph
@@ -250,7 +245,7 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
         
 def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance", assets = []):
     import psycopg2
-    conn = psycopg2.connect(host="localhost", dbname="finance", user='dev', password="93148325", port="5432")
+    conn = psycopg2.connect(host="localhost", dbname="finance", user='postgres', password="1234", port="5432")
     cur = conn.cursor()
     # Do sth
     cur.execute("""ROLLBACK""")
