@@ -31,6 +31,10 @@ class Asset_allocator:
 
     def fitness_func(self, ga_instance, solution, solution_idx):
         gene_value = solution / np.sum(solution)
+        # Set constraint
+        for gene in gene_value:
+            if gene < 0 or gene > 2/len(self.portfolio.get_weights()):
+                return -1
         return self.generated_portfolio(gene_value).sharpe_ratio
 
     def on_generation(self, ga_instance):
@@ -40,13 +44,13 @@ class Asset_allocator:
         """
         # Get the best solution for the current generation
         best_solution, best_fitness, best_solution_idx = ga_instance.best_solution()
+        self.solution_history += [np.array(best_solution / np.sum(best_solution))] # append best solution portfolio in each epoch
         # Print the results
         print(f"== Generation {self.epoch} ==")
         print(f"Sharpe Ratio: {best_fitness}")
         print(f"Solution: {np.array(best_solution / np.sum(best_solution))}")
         self.epoch += 1
         # print(f"solution_history {self.portfolio.set_weights(np.array(best_solution / np.sum(best_solution)))}\n")
-        self.solution_history += [np.array(best_solution / np.sum(best_solution))] # append best solution portfolio in each epoch
 
     def run(self):
         ga_instance = pygad.GA(
@@ -59,13 +63,15 @@ class Asset_allocator:
             on_generation = self.on_generation,
             init_range_low = 0,
             init_range_high = 1,
-            random_mutation_min_val = 0,
+            random_mutation_min_val = -0.2,
             random_mutation_max_val = 1,
+            # gene_space = {'low': 0, 'high': 2/len(self.portfolio.get_weights())}
         )
         ga_instance.run()
         ga_instance.plot_fitness(label=['Fitness', 'Sharpe_Ratio'])
         best_solution, best_fitness, best_solution_idx = ga_instance.best_solution()
+        self.portfolio.set_weights(self.solution_history[-1])
         self.ga_instance = ga_instance
         ga_instance.save("storage/saved_ga_instance")
         self.save_asset_allocator("storage/saved_asset_allocator")
-        return np.array(best_solution / np.sum(best_solution))
+        return self.solution_history[-1]

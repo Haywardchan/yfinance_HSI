@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from .stock import Stock
+from stock import Stock
 
 class Portfolio:
     def __init__(self):
@@ -89,6 +89,30 @@ class Portfolio:
             return 0
         return self.risk / Stock("^HSI").risk
     
+    # Given a portfolio return a return matrix for everyday with rebalancing
+    @property
+    def rebalanced_returns(self):
+        return 
+    
+    # Given a portfolio return a return matrix for everyday without rebalancing
+    @property
+    def returns(self):
+        # Check that the number of weights matches the number of columns in the returns DataFrame
+        merged_df = self.merged_returns()
+        if len(self.portions) != merged_df.shape[1]:
+            raise ValueError("The number of weights must match the number of columns in the returns DataFrame.")
+        
+        # Calculate the weighted returns for each stock
+        weighted_returns = merged_df.mul(self.portions, axis=1)
+        
+        # Calculate the combined returns by summing the weighted returns
+        portfolio_returns = weighted_returns.sum(axis=1)
+        
+        # Create a new DataFrame with the combined returns
+        portfolio_returns_df = pd.DataFrame({'Portfolio Returns': portfolio_returns})
+        
+        return portfolio_returns_df
+
     def covariance_matrix(self):
         merged_returns = self.merged_returns()
         return (merged_returns / 100).cov().values * merged_returns.shape[0] 
@@ -108,13 +132,12 @@ class Portfolio:
         portfolio_info += f"\nRisk: {self.risk:.2f}\nROI: {self.roi:.2f}\nSharpe Ratio: {self.sharpe_ratio:.2f}\nVaR: {self.var:.2f}\nBeta: {self.beta:.2f}"
         return portfolio_info
 
-# x = Portfolio()
-# stockA = Stock("0001.HK")
-# stockB = Stock("0005.HK")
-# stockC = Stock("0002.HK")
-# x.add_stock(stockA, 0.3)
-# x.add_stock(stockB, 0.3)
-# x.add_stock(stockC, 0.4)
-# print(x)
-# x.set_weights([0.1, 0.2, 0.1])
-# print(x)
+x = Portfolio()
+stockA = Stock("0001.HK")
+stockB = Stock("0005.HK")
+stockC = Stock("0002.HK")
+x.add_stock(stockA, 0.3)
+x.add_stock(stockB, 0.3)
+x.add_stock(stockC, 0.4)
+print(x.merged_returns())
+print(x.returns)

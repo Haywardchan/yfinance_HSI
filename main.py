@@ -306,6 +306,21 @@ def lists_to_df(lists):
     list_transposed = list(zip(*lists))
     return pd.DataFrame(list_transposed, columns=list_transposed[0])
 
+def csv_to_json(filename):
+    df = pd.read_csv('data_1y/' + filename)
+    # df = pd.read_csv('data_1y/' + filename + '.csv')
+    # df.to_json('json_data/' + filename.replace(".csv", "") + '.json', indent = 1)
+    df.to_json('json_data/' + filename.replace(".csv", "") + '.json', indent = 1, orient = 'records')
+    print(f"{filename} is converted to json")
+
+def convert_data_to_json(folder_path):
+    # Get a list of all items (files and directories) in the folder
+    items = os.listdir(folder_path)
+
+    # Iterate through the items in the folder
+    for item in items:
+        csv_to_json(item)
+
 def hsi():
     Not_downloaded = True
     stock_txt = 'HSI_stocks.txt'
@@ -326,7 +341,9 @@ def sse():
     save_csv_to_postgreSQL('000001.SS_1y.csv', "stock_performance_sse")
 
 if __name__ == "__main__":
-    hsi()
+    # hsi()
+    # os.mkdir('json_data')
+    convert_data_to_json('data_1y')
 
 
             

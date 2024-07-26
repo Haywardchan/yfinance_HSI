@@ -18,9 +18,9 @@ def generated_portfolio(solution) -> Portfolio:
 # Using given weights, reduce the stock number
 weight = [0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0]
 
-num_generations = 250
-num_stocks = 20
-# Asset_allocator(generated_portfolio(weight).filter_stock_by_sharpe_ratio(num_stocks), generations=num_generations).run()
+num_generations = 100
+num_stocks = 10
+Asset_allocator(generated_portfolio(weight).filter_stock_by_sharpe_ratio(num_stocks), generations=num_generations).run()
 
 def scatter_plot(history: list[float]):
     risk, roi = [], []
@@ -44,8 +44,10 @@ def scatter_plot(history: list[float]):
     plt.title('Efficient Frontier Approach to Optimal Portfolio')
 
     # Show the plot
-    plt.show()
-    plt.savefig("results/Efficient_frontier.png")
+    plt.savefig("results/Efficient_frontier.png", dpi=300)
+    # plt.show()
 
 model_hist = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").solution_history
+model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
+print(model)
 scatter_plot(model_hist)
