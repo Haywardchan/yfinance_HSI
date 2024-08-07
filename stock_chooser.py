@@ -89,5 +89,6 @@ def genetic_algorithm(
             offspring_a, offspring_b = mating(parents[0][1], parents[1][1])
             newGen += [offspring_a, offspring_b]
         solutions = newGen
+    return rankedsolutions[0]
 
 genetic_algorithm(num_generations=100, num_genes=pd.read_csv(f"HSI_1y.csv").shape[0], sol_per_generation=10, keep_parents=2)

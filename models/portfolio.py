@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from stock import Stock
+from .stock import Stock
 
 class Portfolio:
     def __init__(self):
@@ -91,8 +91,12 @@ class Portfolio:
     
     # Given a portfolio return a return matrix for everyday with rebalancing
     @property
-    def rebalanced_returns(self):
-        return 
+    def rebalanced_returns(self, days_to_rebalance = 1):
+        df = self.rebalanced_prices(100, days_to_rebalance)
+        # Calculate the return and add it as a new column
+        returns = (df['Rebalanced Prices'] / df['Rebalanced Prices'].shift(1) - 1) * 100
+        returns[0] = 0
+        return pd.DataFrame({'Rebalanced Portfolio Returns': returns})
     
     # Given a portfolio return a return matrix for everyday without rebalancing
     @property
@@ -112,6 +116,33 @@ class Portfolio:
         portfolio_returns_df = pd.DataFrame({'Portfolio Returns': portfolio_returns})
         
         return portfolio_returns_df
+    
+    def prices(self, init_price):
+        portfolio_prices = [init_price]
+        for daily_return in self.returns["Portfolio Returns"]:
+            next_price = portfolio_prices[-1] * (1 + float(daily_return)/100)
+            portfolio_prices.append(next_price)
+        
+        return pd.DataFrame({'Portfolio Prices': portfolio_prices[1:]})
+
+    def rebalanced_prices(self, init_price, days_to_rebalance = 1):
+        all_stock_prices = [init_price]
+        stock_prices = [weight * init_price for weight in self.portions]
+        # print(stock_prices)
+        merged_df = self.merged_returns()[1:]
+        # print(merged_df)
+        for idx in range(len(merged_df)):
+            stock_prices = np.multiply(1 + merged_df.iloc[idx].values / 100, stock_prices)
+            # print("Returns", merged_df.iloc[idx].values)
+            # print("Stock Prices", stock_prices)
+            if idx % days_to_rebalance == 0:
+                # Rebalance the prices
+                row_sum = np.sum(stock_prices, axis = 0)
+                stock_prices = [weight * row_sum for weight in self.portions]
+                # print("rebalanced Stock Prices", stock_prices)
+            all_stock_prices.append(np.sum(stock_prices, axis = 0))
+        # print(all_stock_prices, len(all_stock_prices))
+        return pd.DataFrame({'Rebalanced Prices': all_stock_prices})
 
     def covariance_matrix(self):
         merged_returns = self.merged_returns()
@@ -132,12 +163,12 @@ class Portfolio:
         portfolio_info += f"\nRisk: {self.risk:.2f}\nROI: {self.roi:.2f}\nSharpe Ratio: {self.sharpe_ratio:.2f}\nVaR: {self.var:.2f}\nBeta: {self.beta:.2f}"
         return portfolio_info
 
-x = Portfolio()
-stockA = Stock("0001.HK")
-stockB = Stock("0005.HK")
-stockC = Stock("0002.HK")
-x.add_stock(stockA, 0.3)
-x.add_stock(stockB, 0.3)
-x.add_stock(stockC, 0.4)
-print(x.merged_returns())
-print(x.returns)
+# x = Portfolio()
+# stockA = Stock("0001.HK")
+# stockB = Stock("0005.HK")
+# stockC = Stock("0002.HK")
+# x.add_stock(stockA, 0.3)
+# x.add_stock(stockB, 0.3)
+# x.add_stock(stockC, 0.4)
+# x.rebalanced_prices(100, 1)
+# print(x.rebalanced_returns)

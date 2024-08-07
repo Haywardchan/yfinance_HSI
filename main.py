@@ -93,7 +93,7 @@ def plot_volume_graph(output_file, stock_code, period="1mo"):
     fig, ax = plt.subplots(figsize=(12, 6))
 
     ax.bar(stock_dates, stock_volume, color='blue')
-    ax.set_title('Trading Volume for 1299.HK')
+    ax.set_title(f'Trading Volume for {stock_code}')
     ax.set_xlabel('Date')
     ax.set_ylabel('Volume')
     ax.grid(True)
@@ -336,14 +336,25 @@ def sse():
     stock_txt = 'A_stocks.txt'
     if Not_downloaded:
         download_stock_from_txt(stock_txt, ["1y"])
+        plot_graphs_from_txt(stock_txt, ["1y"])
         preprocess_df(stock_txt, ["1y"])
         calculate_KPIs(stock_txt, ["1y"], "000001.SS")
-    save_csv_to_postgreSQL('000001.SS_1y.csv', "stock_performance_sse")
+    # save_csv_to_postgreSQL('000001.SS_1y.csv', "stock_performance_sse")
+
+def nasdaq():
+    Not_downloaded = True
+    stock_txt = 'NASDAQ_stocks.txt'
+    if Not_downloaded:
+        download_stock_from_txt(stock_txt, ["1y"])
+        plot_graphs_from_txt(stock_txt, ["1y"])
+        preprocess_df(stock_txt, ["1y"])
+        graphs = calculate_KPIs(stock_txt, ["1y"], "^NDX")
+    save_csv_to_postgreSQL('^NDX_1y.csv', "stock_performance_nasdaq", graphs)
 
 if __name__ == "__main__":
-    # hsi()
+    nasdaq()
     # os.mkdir('json_data')
-    convert_data_to_json('data_1y')
+    # convert_data_to_json('data_1y')
 
 
             
