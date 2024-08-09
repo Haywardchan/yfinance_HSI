@@ -16,7 +16,7 @@ app.get('/api/data/hsi', (req, res)=>{
     port: 5432,
     });
     client.connect();
-    client.query('SELECT * FROM stock_performance', (err, result) => {
+    client.query('SELECT * FROM stock_performance_hsi', (err, result) => {
         if (err) {
             console.error(err);
             res.status(500).send('ERROR fetching data')

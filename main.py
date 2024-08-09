@@ -325,9 +325,9 @@ def hsi():
     Not_downloaded = True
     stock_txt = 'HSI_stocks.txt'
     if Not_downloaded:
-        # download_stock_from_txt(stock_txt, ["1y"])
-        # plot_graphs_from_txt(stock_txt, ["1y"])
-        # preprocess_df(stock_txt, ["1y"])
+        download_stock_from_txt(stock_txt, ["1y"])
+        plot_graphs_from_txt(stock_txt, ["1y"])
+        preprocess_df(stock_txt, ["1y"])
         graphs = calculate_KPIs(stock_txt, ["1y"])
     save_csv_to_postgreSQL('HSI_1y.csv', "stock_performance", graphs)
 
@@ -339,7 +339,7 @@ def sse():
         plot_graphs_from_txt(stock_txt, ["1y"])
         preprocess_df(stock_txt, ["1y"])
         calculate_KPIs(stock_txt, ["1y"], "000001.SS")
-    # save_csv_to_postgreSQL('000001.SS_1y.csv', "stock_performance_sse")
+    save_csv_to_postgreSQL('000001.SS_1y.csv', "stock_performance_sse")
 
 def nasdaq():
     Not_downloaded = True
@@ -351,10 +351,21 @@ def nasdaq():
         graphs = calculate_KPIs(stock_txt, ["1y"], "^NDX")
     save_csv_to_postgreSQL('^NDX_1y.csv', "stock_performance_nasdaq", graphs)
 
+def analyze_index(index, stock_txt, db_table_name):
+    Not_downloaded = True
+    if Not_downloaded:
+        download_stock_from_txt(stock_txt, ["1y"])
+        plot_graphs_from_txt(stock_txt, ["1y"])
+        preprocess_df(stock_txt, ["1y"])
+        graphs = calculate_KPIs(stock_txt, ["1y"], index)
+    save_csv_to_postgreSQL(f'{index}_1y.csv', db_table_name, graphs)
+
 if __name__ == "__main__":
-    nasdaq()
+    # analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq")
+    # analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi")
+    # analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse")
     # os.mkdir('json_data')
-    # convert_data_to_json('data_1y')
+    convert_data_to_json('data_1y')
 
 
             
