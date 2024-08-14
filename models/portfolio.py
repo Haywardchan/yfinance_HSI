@@ -117,15 +117,19 @@ class Portfolio:
         
         return portfolio_returns_df
     
-    def prices(self, init_price):
+    def prices(self, init_price, period="1y"):
+        self.period = period
         portfolio_prices = [init_price]
-        for daily_return in self.returns["Portfolio Returns"]:
-            next_price = portfolio_prices[-1] * (1 + float(daily_return)/100)
-            portfolio_prices.append(next_price)
-        
+        stock_prices = [weight * init_price for weight in self.portions]
+        merged_df = self.merged_returns()[1:]
+        for idx in range(len(merged_df)):
+            stock_prices = np.multiply(1 + merged_df.iloc[idx].values / 100, stock_prices)
+            portfolio_prices.append(np.sum(stock_prices, axis = 0))
+        print(portfolio_prices, len(portfolio_prices))
         return pd.DataFrame({'Portfolio Prices': portfolio_prices[1:]})
 
-    def rebalanced_prices(self, init_price, days_to_rebalance = 1):
+    def rebalanced_prices(self, init_price, days_to_rebalance = 1, period="1y"):
+        self.period=period
         all_stock_prices = [init_price]
         stock_prices = [weight * init_price for weight in self.portions]
         # print(stock_prices)
@@ -170,5 +174,5 @@ class Portfolio:
 # x.add_stock(stockA, 0.3)
 # x.add_stock(stockB, 0.3)
 # x.add_stock(stockC, 0.4)
-# x.rebalanced_prices(100, 1)
-# print(x.rebalanced_returns)
+# # x.rebalanced_prices(100, 1)
+# print(x.prices(100))

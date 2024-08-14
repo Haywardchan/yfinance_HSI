@@ -306,8 +306,8 @@ def lists_to_df(lists):
     list_transposed = list(zip(*lists))
     return pd.DataFrame(list_transposed, columns=list_transposed[0])
 
-def csv_to_json(filename):
-    df = pd.read_csv('data_1y/' + filename)
+def csv_to_json(filename, filepath):
+    df = pd.read_csv(filepath + '/' + filename)
     # df = pd.read_csv('data_1y/' + filename + '.csv')
     # df.to_json('json_data/' + filename.replace(".csv", "") + '.json', indent = 1)
     df.to_json('json_data/' + filename.replace(".csv", "") + '.json', indent = 1, orient = 'records')
@@ -319,7 +319,7 @@ def convert_data_to_json(folder_path):
 
     # Iterate through the items in the folder
     for item in items:
-        csv_to_json(item)
+        csv_to_json(item, folder_path)
 
 def hsi():
     Not_downloaded = True
@@ -351,21 +351,23 @@ def nasdaq():
         graphs = calculate_KPIs(stock_txt, ["1y"], "^NDX")
     save_csv_to_postgreSQL('^NDX_1y.csv', "stock_performance_nasdaq", graphs)
 
-def analyze_index(index, stock_txt, db_table_name):
+def analyze_index(index, stock_txt, db_table_name, periods):
     Not_downloaded = True
     if Not_downloaded:
-        download_stock_from_txt(stock_txt, ["1y"])
-        plot_graphs_from_txt(stock_txt, ["1y"])
-        preprocess_df(stock_txt, ["1y"])
-        graphs = calculate_KPIs(stock_txt, ["1y"], index)
-    save_csv_to_postgreSQL(f'{index}_1y.csv', db_table_name, graphs)
+        download_stock_from_txt(stock_txt, periods)
+        plot_graphs_from_txt(stock_txt, periods)
+        preprocess_df(stock_txt, periods)
+        graphs = calculate_KPIs(stock_txt, periods, index)
+    for period in periods:
+        save_csv_to_postgreSQL(f'{index}_{period}.csv', db_table_name, graphs)
 
 if __name__ == "__main__":
-    # analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq")
-    # analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi")
-    # analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse")
+    # analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["5y"])
+    # analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["5y"])
+    # analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["5y"])
     # os.mkdir('json_data')
-    convert_data_to_json('data_1y')
+    convert_data_to_json('data_2y')
+    convert_data_to_json('data_5y')
 
 
             

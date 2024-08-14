@@ -68,7 +68,7 @@ class Asset_allocator:
             # gene_space = {'low': 0, 'high': 2/len(self.portfolio.get_weights())}
         )
         ga_instance.run()
-        ga_instance.plot_fitness(label=['Fitness', 'Sharpe_Ratio'])
+        # ga_instance.plot_fitness(label=['Fitness', 'Sharpe_Ratio'])
         best_solution, best_fitness, best_solution_idx = ga_instance.best_solution()
         self.portfolio.set_weights(self.solution_history[-1])
         self.ga_instance = ga_instance
