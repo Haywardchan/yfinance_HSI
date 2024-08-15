@@ -4,16 +4,16 @@ import numpy as np
 from models import Stock, Portfolio
 
 class Stock_chooser:
-    def __init__(self, target_stocks, num_stocks, stocks_file, mutation_rate=0.1):
+    def __init__(self, target_stocks, num_stocks, stocks_file, index="hsi", mutation_rate=0.1):
         self.target_stocks = target_stocks
         self.df = pd.read_csv(stocks_file)
         self.num_stocks = num_stocks
-        self.preselected_stocks = self.preselect_stocks()
+        self.preselected_stocks = self.preselect_stocks(index)
         self.mutation_rate = mutation_rate
 
-    def preselect_stocks(self):
+    def preselect_stocks(self, index):
         # Calculate Sharpe ratio for each stock
-        stocks = [Stock(ticker) for ticker in self.df['stock_id']]
+        stocks = [Stock(ticker, index) for ticker in self.df['stock_id']]
         stock_sharpe_ratios = [(stock, stock.sharpe_ratio) for stock in stocks]
         
         # Sort stocks by Sharpe ratio in descending order

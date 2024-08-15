@@ -1,8 +1,13 @@
 import pandas as pd
 class Stock:
-    def __init__(self, stock_id):
+    def __init__(self, stock_id, index="hsi"):
         self.period = "1y"
-        df = pd.read_csv(f"HSI_{self.period}.csv")
+        if index == "hsi":
+            df = pd.read_csv(f"HSI_{self.period}.csv")
+        elif index == "sse":
+            df = pd.read_csv(f"000001.SS_{self.period}.csv")
+        elif index == "nasdaq":
+            df = pd.read_csv(f"^NDX_{self.period}.csv")
         row = df.loc[df['stock_id']==stock_id]
         self.stock_id = stock_id
         # We cannot change the schema of the csv

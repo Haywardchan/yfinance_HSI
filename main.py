@@ -34,20 +34,24 @@ def download_stock_data(output_file, stock_code, period="1mo"):
     output_file (str): The path and filename to save the CSV file.
     period (str): The time period to download data for. Can be "max", "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", or "ytd". Default is "max".
     """
-    # Download the stock data
-    stock = yf.Ticker(stock_code)
-    df = stock.history(period = period)
-    # Get the directory of the script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Construct the 'data' folder path
-    data_folder = os.path.join(script_dir, 'data' + '_' + period)
-    # Construct the output file path
-    output_file = os.path.join(data_folder, output_file)
-    # Create the 'data' folder if it doesn't exist
-    os.makedirs(data_folder, exist_ok = True)
-    # Save the dataframe as a CSV file
-    df.to_csv(output_file)
-    print(f"Stock data for {stock_code} ({period}) saved to {output_file}")
+    try:
+        # Download the stock data
+        stock = yf.Ticker(stock_code)
+        df = stock.history(period = period)
+        # Get the directory of the script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Construct the 'data' folder path
+        data_folder = os.path.join(script_dir, 'data' + '_' + period)
+        # Construct the output file path
+        output_file = os.path.join(data_folder, output_file)
+        # Create the 'data' folder if it doesn't exist
+        os.makedirs(data_folder, exist_ok = True)
+        # Save the dataframe as a CSV file
+        df.to_csv(output_file)
+        print(f"Stock data for {stock_code} ({period}) saved to {output_file}")
+    except:
+        print("Cannot find period, search for larger dataset...")
+        
 
 def plot_price_graph(output_file, stock_code, period="1mo"):
     import pandas as pd
@@ -252,6 +256,21 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance", assets = [
     cur.execute(f"""
     DROP TABLE IF EXISTS {table_name}
     """)
+    # cur.execute(f"""
+    # CREATE TABLE {table_name} (
+    #     id SERIAL PRIMARY KEY,
+    #     stock_id VARCHAR(50) NOT NULL,
+    #     stock_name VARCHAR(100) NOT NULL,
+    #     risk DECIMAL(10,2) NOT NULL,
+    #     roi DECIMAL(10,2) NOT NULL,
+    #     sharpe_ratio DECIMAL(10,2) NOT NULL,
+    #     correlation_to_hsi DECIMAL(10,2) NOT NULL,
+    #     PE_ratio DECIMAL(10,2) NOT NULL,
+    #     VaR DECIMAL(10,2) NOT NULL,
+    #     price_chart BYTEA NOT NULL,
+    #     volume_chart BYTEA NOT NULL
+    # );
+    # """)
     cur.execute(f"""
     CREATE TABLE {table_name} (
         id SERIAL PRIMARY KEY,
@@ -262,9 +281,7 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance", assets = [
         sharpe_ratio DECIMAL(10,2) NOT NULL,
         correlation_to_hsi DECIMAL(10,2) NOT NULL,
         PE_ratio DECIMAL(10,2) NOT NULL,
-        VaR DECIMAL(10,2) NOT NULL,
-        price_chart BYTEA NOT NULL,
-        volume_chart BYTEA NOT NULL
+        VaR DECIMAL(10,2) NOT NULL
     );
     """)
     # Open the CSV file and read the data
@@ -274,8 +291,10 @@ def save_csv_to_postgreSQL(csvfile, table_name = "stock_performance", assets = [
         # Insert the data into the PostgreSQL table
         for idx, row in enumerate(reader):
             stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR = row
-            cur.execute(f"INSERT INTO {table_name} (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR, price_chart, volume_chart) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-                    (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR, assets[0][idx], assets[1][idx]))
+            # cur.execute(f"INSERT INTO {table_name} (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR, price_chart, volume_chart) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+            #         (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR, assets[0][idx], assets[1][idx]))
+            cur.execute(f"INSERT INTO {table_name} (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                    (stock_id, stock_name, risk, roi, sharpe_ratio, correlation_to_hsi, PE_ratio, VaR))
 
     # Commit the changes and close the connection
     conn.commit()
@@ -355,19 +374,27 @@ def analyze_index(index, stock_txt, db_table_name, periods):
     Not_downloaded = True
     if Not_downloaded:
         download_stock_from_txt(stock_txt, periods)
-        plot_graphs_from_txt(stock_txt, periods)
+        # plot_graphs_from_txt(stock_txt, periods)
         preprocess_df(stock_txt, periods)
         graphs = calculate_KPIs(stock_txt, periods, index)
     for period in periods:
-        save_csv_to_postgreSQL(f'{index}_{period}.csv', db_table_name, graphs)
+        table_name = db_table_name + "_" + period
+        save_csv_to_postgreSQL(f'{index}_{period}.csv', table_name)
 
 if __name__ == "__main__":
-    # analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["5y"])
-    # analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["5y"])
-    # analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["5y"])
-    # os.mkdir('json_data')
-    convert_data_to_json('data_2y')
-    convert_data_to_json('data_5y')
+    # analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["1y","2y","5y"])
+    # analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["1y","2y","5y"])
+    # analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["1y","2y","5y"])
+    # # os.mkdir('json_data')
+    # convert_data_to_json('data_1y')
+    # convert_data_to_json('data_2y')
+    # convert_data_to_json('data_5y')
+
+    analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["3y"])
+    analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["3y"])
+    analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["3y"])
+    convert_data_to_json('data_3y')
+
 
 
             
