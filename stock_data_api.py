@@ -11,7 +11,7 @@ class stock_API(Resource):
         with open(f'json_data/{query}.json') as f:
             res = f.read()
         return json.loads(res), 201
-    
+
 class optimal_portfolio_API(Resource):
     def get(self, init_price, period):
         model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
@@ -23,7 +23,23 @@ class rebalanced_portfolio_API(Resource):
         model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
         prices = model.rebalanced_prices(float(init_price), int(days_to_rebalance), period)
         return make_response(jsonify(prices.to_dict()), 201)
-    
+
+class index_API(Resource):
+    def get(self, init_price, index, period):
+        stockIndex = ''
+        if index =='hsi':
+            stockIndex = '^HSI'
+        elif index =='sse':
+            stockIndex = '000001.SS'
+        elif index =='nasdaq':
+            stockIndex = '^NDX'
+        # Assuming the index data has a method to calculate prices similar to Portfolio
+        # print(stockIndex, index)
+        portfolio = Portfolio()
+        portfolio.add_stock(Stock(stockIndex, index=index), 1)
+        prices = portfolio.prices(float(init_price), period)  # Adjust this line as necessary
+        return make_response(jsonify(prices.to_dict()), 201)
+
 class genetic_mutation_API(Resource):
     def get(self, num_stocks, num_iterations, index):
         if index =='hsi':
@@ -33,7 +49,7 @@ class genetic_mutation_API(Resource):
         elif index =='nasdaq':
             filepath = '^NDX_1y.csv'
         print(filepath)
-        stocks_portfolio = Stock_chooser(target_stocks=int(num_stocks), num_stocks=int(num_stocks), stocks_file=filepath, index=index, mutation_rate=0.3).genetic_algorithm(num_generations=10, sol_per_generation=30, keep_parents=2)
+        stocks_portfolio = Stock_chooser(target_stocks=int(num_stocks), num_stocks=15, stocks_file=filepath, index=index, mutation_rate=0.3).genetic_algorithm(num_generations=10, sol_per_generation=30, keep_parents=2)
         model = Asset_allocator(stocks_portfolio, generations=int(num_iterations))
         model.run()
         return make_response(jsonify({
@@ -45,6 +61,7 @@ class genetic_mutation_API(Resource):
             "var": model.portfolio.var,
             "beta": model.portfolio.beta,
         }), 201)
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/finance'
@@ -68,6 +85,7 @@ api.add_resource(stock_API, '/api/stock/<string:query>')
 api.add_resource(optimal_portfolio_API, '/api/optimal_portfolio/<string:init_price>/<string:period>')
 api.add_resource(rebalanced_portfolio_API, '/api/optimal_portfolio/<string:init_price>/<string:days_to_rebalance>/<string:period>')
 api.add_resource(genetic_mutation_API, '/api/genetic_mutation/<string:num_stocks>/<string:num_iterations>/<string:index>')
+api.add_resource(index_API, '/api/index/<string:init_price>/<string:index>/<string:period>')
 
 if __name__=='__main__':
     app.run(debug=True)

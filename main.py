@@ -34,10 +34,38 @@ def download_stock_data(output_file, stock_code, period="1mo"):
     output_file (str): The path and filename to save the CSV file.
     period (str): The time period to download data for. Can be "max", "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", or "ytd". Default is "max".
     """
-    try:
+    valid_periods = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"]
+    
+    if period not in valid_periods:
+        print("Invalid period specified, searching for larger dataset...")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # create a new folder called data_3y
+        data_3y_folder = os.path.join(script_dir, 'data_3y')
+        os.makedirs(data_3y_folder, exist_ok=True)
+
+        # Check if the specific file exists in the data_5y folder
+        data_5y_folder = os.path.join(script_dir, 'data_5y')
+        specific_filename = f"{stock_code}_5y.csv"
+        file_path = os.path.join(data_5y_folder, specific_filename)
+        
+        if os.path.isfile(file_path):
+            df = pd.read_csv(file_path)
+            # Slice the dataframe to get the last 3 years of data
+            df['Date'] = pd.to_datetime(df['Date'], utc=True)
+            max_date = df['Date'].max()
+            three_years_ago = max_date - pd.DateOffset(years=3)
+            df_sliced = df[df['Date'] >= three_years_ago]
+            # Save the dataframe as a new csv file in the created data_3y folder with the new filename
+            new_filename = specific_filename.replace('_5y', '_3y')
+            new_file_path = os.path.join(data_3y_folder, new_filename)
+            df_sliced.to_csv(new_file_path, index=False)
+            print(f"Stock data for {stock_code} ({period}) saved to {new_file_path}")
+        else:
+            print(f"No data found for {stock_code} in the data_5y folder.")
+    else:
         # Download the stock data
         stock = yf.Ticker(stock_code)
-        df = stock.history(period = period)
+        df = stock.history(period=period)
         # Get the directory of the script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         # Construct the 'data' folder path
@@ -45,12 +73,11 @@ def download_stock_data(output_file, stock_code, period="1mo"):
         # Construct the output file path
         output_file = os.path.join(data_folder, output_file)
         # Create the 'data' folder if it doesn't exist
-        os.makedirs(data_folder, exist_ok = True)
+        os.makedirs(data_folder, exist_ok=True)
         # Save the dataframe as a CSV file
         df.to_csv(output_file)
         print(f"Stock data for {stock_code} ({period}) saved to {output_file}")
-    except:
-        print("Cannot find period, search for larger dataset...")
+
         
 
 def plot_price_graph(output_file, stock_code, period="1mo"):
@@ -223,16 +250,22 @@ def calculate_KPIs(file_txt, periods = ["1mo", "1y", "5y"], index="HSI"):
             stock_VaR = norm.ppf(0.05) * df['Return (%)'].std() * np.sqrt(365/252)
             # Stock Name
             stkname = stk_info["longName"]
-            # Price Trend Graph
-            with open(f"charts_{period}/P{code}_{period}.png", 'rb') as f:
-                binary_data = f.read()
-            price_charts.append(binary_data)
-            f.close()
-            # Price Trend Graph
-            with open(f"charts_{period}/V{code}_{period}.png", 'rb') as f:
-                binary_data = f.read()
-            volume_charts.append(binary_data)
-            f.close()
+            price_trend_path = f"charts_{period}/P{code}_{period}.png"
+            volume_graph_path = f"charts_{period}/V{code}_{period}.png"
+            
+            if os.path.exists(price_trend_path):
+                with open(price_trend_path, 'rb') as f:
+                    binary_data = f.read()
+                price_charts.append(binary_data)
+            else:
+                print("Price trend chart does not exist")
+
+            if os.path.exists(volume_graph_path):
+                with open(volume_graph_path, 'rb') as f:
+                    binary_data = f.read()
+                volume_charts.append(binary_data)
+            else:
+                print("Volume chart does not exist")
             risks.append(stock_risk)
             returns.append(stock_TROI)
             sharpes.append(stock_sharpe)
