@@ -125,8 +125,8 @@ class Portfolio:
         for idx in range(len(merged_df)):
             stock_prices = np.multiply(1 + merged_df.iloc[idx].values / 100, stock_prices)
             portfolio_prices.append(np.sum(stock_prices, axis = 0))
-        print(portfolio_prices, len(portfolio_prices))
-        return pd.DataFrame({'Portfolio Prices': portfolio_prices[1:]})
+        # print(portfolio_prices, len(portfolio_prices))
+        return pd.DataFrame({'Portfolio Prices': portfolio_prices[1:]}, index=self.get_dates()[1:])
 
     def rebalanced_prices(self, init_price, days_to_rebalance = 1, period="1y"):
         self.period=period
@@ -146,7 +146,7 @@ class Portfolio:
                 # print("rebalanced Stock Prices", stock_prices)
             all_stock_prices.append(np.sum(stock_prices, axis = 0))
         # print(all_stock_prices, len(all_stock_prices))
-        return pd.DataFrame({'Rebalanced Prices': all_stock_prices})
+        return pd.DataFrame({'Rebalanced Prices': all_stock_prices}, index=self.get_dates())
 
     def covariance_matrix(self):
         merged_returns = self.merged_returns()
@@ -157,8 +157,27 @@ class Portfolio:
         for i, stock in enumerate(self.stocks):
             df = pd.read_csv(f"data_{self.period}/{stock.stock_id}_{self.period}.csv")
             returns.append(df['Return (%)'])
-            merged_df = pd.concat(returns, axis=1)
-        return merged_df.fillna(0) # fill nan as 0 for an assumption
+        merged_df = pd.concat(returns, axis=1)
+        return merged_df.fillna(0)  # fill nan as 0 for an assumption
+    
+    def get_dates(self):
+        """
+        Returns the dates from the stock data CSV file for the given period.
+
+        Returns:
+        list: A list of dates as strings.
+        """
+        df = pd.read_csv(f"data_5y/{self.stocks[0].stock_id}_5y.csv")
+        dates = df['Date'].tolist()
+        merged_df = self.merged_returns()
+        
+        # Remove dates where merged_df has NaN values
+        valid_dates = [date for date, value in zip(dates, merged_df.notna().all(axis=1)) if value]
+        
+        if len(valid_dates) != merged_df.shape[0]:
+            raise ValueError("The number of valid dates must match the number of merged returns.")
+        
+        return valid_dates
     
     def __str__(self):
         portfolio_info = "Portfolio Information:\n"

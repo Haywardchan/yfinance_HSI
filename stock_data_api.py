@@ -11,6 +11,24 @@ class stock_API(Resource):
         with open(f'json_data/{query}.json') as f:
             res = f.read()
         return json.loads(res), 201
+    
+class cropped_data_API(Resource):
+    def get(self, stock_number, start_month, start_year, end_month, end_year):
+        # Construct the file path based on the stock number
+        filepath = f"json_data/{stock_number}_5y.json"
+        
+        # Load the data from the JSON file
+        with open(filepath) as f:
+            data = json.load(f)
+        
+        # Filter the data based on the start month, start year, end month, and end year
+        cropped_data = [
+            entry for entry in data 
+            if (entry['Date'] >= f"{start_year}-{start_month.zfill(2)}-01" and 
+                entry['Date'] <= f"{end_year}-{end_month.zfill(2)}-31")
+        ]
+        
+        return make_response(jsonify(cropped_data), 200)
 
 class optimal_portfolio_API(Resource):
     def get(self, init_price, period):
@@ -18,11 +36,37 @@ class optimal_portfolio_API(Resource):
         prices = model.prices(float(init_price), period)
         return make_response(jsonify(prices.to_dict()), 201)
 
+class cropped_optimal_portfolio_API(Resource):
+    def get(self, init_price, start_month, start_year, end_month, end_year):
+        model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
+        prices = model.prices(float(init_price), "5y")
+        
+        # Filter the prices based on the start month, start year, end month, and end year
+        cropped_prices = prices[
+            (prices.index >= f"{start_year}-{start_month.zfill(2)}-01") & 
+            (prices.index <= f"{end_year}-{end_month.zfill(2)}-31")
+        ]
+        cropped_prices = cropped_prices * float(init_price) / cropped_prices.iloc[0]
+        return make_response(jsonify(cropped_prices.to_dict()), 201)
+
 class rebalanced_portfolio_API(Resource):
     def get(self, init_price, days_to_rebalance, period):
         model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
         prices = model.rebalanced_prices(float(init_price), int(days_to_rebalance), period)
         return make_response(jsonify(prices.to_dict()), 201)
+
+class cropped_rebalanced_portfolio_API(Resource):
+    def get(self, init_price, days_to_rebalance, start_month, start_year, end_month, end_year):
+        model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
+        prices = model.rebalanced_prices(float(init_price), int(days_to_rebalance), "5y")
+        
+        # Filter the prices based on the start month, start year, end month, and end year
+        cropped_prices = prices[
+            (prices.index >= f"{start_year}-{start_month.zfill(2)}-01") & 
+            (prices.index <= f"{end_year}-{end_month.zfill(2)}-31")
+        ]
+        cropped_prices = cropped_prices * float(init_price) / cropped_prices.iloc[0]
+        return make_response(jsonify(cropped_prices.to_dict()), 201)
 
 class index_API(Resource):
     def get(self, init_price, index, period):
@@ -33,12 +77,34 @@ class index_API(Resource):
             stockIndex = '000001.SS'
         elif index =='nasdaq':
             stockIndex = '^NDX'
-        # Assuming the index data has a method to calculate prices similar to Portfolio
-        # print(stockIndex, index)
+        
         portfolio = Portfolio()
         portfolio.add_stock(Stock(stockIndex, index=index), 1)
         prices = portfolio.prices(float(init_price), period)  # Adjust this line as necessary
         return make_response(jsonify(prices.to_dict()), 201)
+
+class cropped_index_API(Resource):
+    def get(self, init_price, index, start_month, start_year, end_month, end_year):
+        stockIndex = ''
+        if index =='hsi':
+            stockIndex = '^HSI'
+        elif index =='sse':
+            stockIndex = '000001.SS'
+        elif index =='nasdaq':
+            stockIndex = '^NDX'
+        
+        portfolio = Portfolio()
+        portfolio.add_stock(Stock(stockIndex, index=index), 1)
+        prices = portfolio.prices(float(init_price), "5y")
+        
+        # Filter the prices based on the start month, start year, end month, and end year
+        cropped_prices = prices[
+            (prices.index >= f"{start_year}-{start_month.zfill(2)}-01") & 
+            (prices.index <= f"{end_year}-{end_month.zfill(2)}-31")
+        ] 
+        cropped_prices = cropped_prices * float(init_price) / cropped_prices.iloc[0]
+        
+        return make_response(jsonify(cropped_prices.to_dict()), 201)
 
 class genetic_mutation_API(Resource):
     def get(self, num_stocks, num_iterations, index):
@@ -83,9 +149,13 @@ class Database_API(Resource):
 api.add_resource(Database_API, '/api/database/<string:index>/<string:period>')
 api.add_resource(stock_API, '/api/stock/<string:query>')
 api.add_resource(optimal_portfolio_API, '/api/optimal_portfolio/<string:init_price>/<string:period>')
-api.add_resource(rebalanced_portfolio_API, '/api/optimal_portfolio/<string:init_price>/<string:days_to_rebalance>/<string:period>')
+api.add_resource(cropped_optimal_portfolio_API, '/api/cropped_optimal_portfolio/<string:init_price>/<string:start_month>/<string:start_year>/<string:end_month>/<string:end_year>')
+api.add_resource(rebalanced_portfolio_API, '/api/rebalanced_portfolio/<string:init_price>/<string:days_to_rebalance>/<string:period>')
+api.add_resource(cropped_rebalanced_portfolio_API, '/api/cropped_rebalanced_portfolio/<string:init_price>/<string:days_to_rebalance>/<string:start_month>/<string:start_year>/<string:end_month>/<string:end_year>')
 api.add_resource(genetic_mutation_API, '/api/genetic_mutation/<string:num_stocks>/<string:num_iterations>/<string:index>')
 api.add_resource(index_API, '/api/index/<string:init_price>/<string:index>/<string:period>')
+api.add_resource(cropped_data_API, '/api/cropped/<string:stock_number>/<string:start_month>/<string:start_year>/<string:end_month>/<string:end_year>')
+api.add_resource(cropped_index_API, '/api/cropped_index/<string:init_price>/<string:index>/<string:start_month>/<string:start_year>/<string:end_month>/<string:end_year>')
 
 if __name__=='__main__':
     app.run(debug=True)
