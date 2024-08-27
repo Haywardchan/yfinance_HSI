@@ -1,3 +1,4 @@
+import yfinance as yf
 from flask import Flask, request, render_template_string, jsonify, make_response
 from flask_restful import Api, Resource
 import json
@@ -145,6 +146,21 @@ class Database_API(Resource):
             row_dict = dict(row)
             data.append(row_dict)
         return make_response(jsonify(data), 200)
+
+class StockHeadquartersAPI(Resource):
+    def get(self, stock_code):
+        stock = yf.Ticker(stock_code)
+        info = stock.info
+        
+        headquarters = info.get('address1', 'Headquarters not found for the given stock code.')
+        
+        return make_response(jsonify({
+            "stock_code": stock_code,
+            "headquarters": headquarters
+        }), 200)
+
+api.add_resource(StockHeadquartersAPI, '/api/stock_headquarters/<string:stock_code>')
+
 
 api.add_resource(Database_API, '/api/database/<string:index>/<string:period>')
 api.add_resource(stock_API, '/api/stock/<string:query>')
