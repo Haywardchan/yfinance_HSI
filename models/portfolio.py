@@ -167,7 +167,7 @@ class Portfolio:
         Returns:
         list: A list of dates as strings.
         """
-        df = pd.read_csv(f"data_5y/{self.stocks[0].stock_id}_5y.csv")
+        df = pd.read_csv(f"data_10y/{self.stocks[0].stock_id}_10y.csv")
         dates = df['Date'].tolist()
         merged_df = self.merged_returns()
         

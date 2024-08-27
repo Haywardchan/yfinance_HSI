@@ -16,7 +16,7 @@ class stock_API(Resource):
 class cropped_data_API(Resource):
     def get(self, stock_number, start_month, start_year, end_month, end_year):
         # Construct the file path based on the stock number
-        filepath = f"json_data/{stock_number}_5y.json"
+        filepath = f"json_data/{stock_number}_10y.json"
         
         # Load the data from the JSON file
         with open(filepath) as f:
@@ -40,7 +40,7 @@ class optimal_portfolio_API(Resource):
 class cropped_optimal_portfolio_API(Resource):
     def get(self, init_price, start_month, start_year, end_month, end_year):
         model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
-        prices = model.prices(float(init_price), "5y")
+        prices = model.prices(float(init_price), "10y")
         
         # Filter the prices based on the start month, start year, end month, and end year
         cropped_prices = prices[
@@ -59,7 +59,7 @@ class rebalanced_portfolio_API(Resource):
 class cropped_rebalanced_portfolio_API(Resource):
     def get(self, init_price, days_to_rebalance, start_month, start_year, end_month, end_year):
         model = Asset_allocator(Portfolio()).load_asset_allocator("storage/saved_asset_allocator").portfolio
-        prices = model.rebalanced_prices(float(init_price), int(days_to_rebalance), "5y")
+        prices = model.rebalanced_prices(float(init_price), int(days_to_rebalance), "10y")
         
         # Filter the prices based on the start month, start year, end month, and end year
         cropped_prices = prices[
@@ -96,7 +96,7 @@ class cropped_index_API(Resource):
         
         portfolio = Portfolio()
         portfolio.add_stock(Stock(stockIndex, index=index), 1)
-        prices = portfolio.prices(float(init_price), "5y")
+        prices = portfolio.prices(float(init_price), "10y")
         
         # Filter the prices based on the start month, start year, end month, and end year
         cropped_prices = prices[

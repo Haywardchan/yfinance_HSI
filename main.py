@@ -78,8 +78,6 @@ def download_stock_data(output_file, stock_code, period="1mo"):
         df.to_csv(output_file)
         print(f"Stock data for {stock_code} ({period}) saved to {output_file}")
 
-        
-
 def plot_price_graph(output_file, stock_code, period="1mo"):
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -423,10 +421,10 @@ if __name__ == "__main__":
     # convert_data_to_json('data_2y')
     # convert_data_to_json('data_5y')
 
-    analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["3y"])
-    analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["3y"])
-    analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["3y"])
-    convert_data_to_json('data_3y')
+    analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["10y"])
+    analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["10y"])
+    analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["10y"])
+    convert_data_to_json('data_10y')
 
 
 
