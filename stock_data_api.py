@@ -160,8 +160,6 @@ class StockHeadquartersAPI(Resource):
         }), 200)
 
 api.add_resource(StockHeadquartersAPI, '/api/stock_headquarters/<string:stock_code>')
-
-
 api.add_resource(Database_API, '/api/database/<string:index>/<string:period>')
 api.add_resource(stock_API, '/api/stock/<string:query>')
 api.add_resource(optimal_portfolio_API, '/api/optimal_portfolio/<string:init_price>/<string:period>')

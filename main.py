@@ -420,7 +420,6 @@ if __name__ == "__main__":
     # convert_data_to_json('data_1y')
     # convert_data_to_json('data_2y')
     # convert_data_to_json('data_5y')
-
     analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["10y"])
     analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["10y"])
     analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["10y"])
