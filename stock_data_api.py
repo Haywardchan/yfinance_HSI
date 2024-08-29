@@ -159,6 +159,18 @@ class StockHeadquartersAPI(Resource):
             "headquarters": headquarters
         }), 200)
 
+class RefreshDataAPI(Resource):
+    def post(self):
+        # Logic to refresh the data
+        try:
+            # Assuming a function refresh_data() exists that handles the data refresh
+            from main import refresh
+            refresh()
+            return make_response(jsonify({"message": "Data refreshed successfully."}), 200)
+        except Exception as e:
+            return make_response(jsonify({"error": str(e)}), 500)
+
+api.add_resource(RefreshDataAPI, '/api/refresh_data')
 api.add_resource(StockHeadquartersAPI, '/api/stock_headquarters/<string:stock_code>')
 api.add_resource(Database_API, '/api/database/<string:index>/<string:period>')
 api.add_resource(stock_API, '/api/stock/<string:query>')

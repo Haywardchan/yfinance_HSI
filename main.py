@@ -412,17 +412,24 @@ def analyze_index(index, stock_txt, db_table_name, periods):
         table_name = db_table_name + "_" + period
         save_csv_to_postgreSQL(f'{index}_{period}.csv', table_name)
 
+def refresh():
+    analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["1y","2y","3y", "5y", "10y"])
+    analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["1y","2y","3y", "5y", "10y"])
+    analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["1y","2y","3y", "5y", "10y"])
+    convert_data_to_json('data_1y')
+    convert_data_to_json('data_2y')
+    convert_data_to_json('data_3y')
+    convert_data_to_json('data_5y')
+    convert_data_to_json('data_10y')
+
 if __name__ == "__main__":
-    # analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["1y","2y","5y"])
-    # analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["1y","2y","5y"])
-    # analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["1y","2y","5y"])
-    # # os.mkdir('json_data')
-    # convert_data_to_json('data_1y')
-    # convert_data_to_json('data_2y')
-    # convert_data_to_json('data_5y')
-    analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["10y"])
-    analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["10y"])
-    analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["10y"])
+    analyze_index("^NDX", 'NASDAQ_stocks.txt', "stock_performance_nasdaq", ["1y","2y","3y", "5y", "10y"])
+    analyze_index("^HSI", 'HSI_stocks.txt', "stock_performance_hsi", ["1y","2y","3y", "5y", "10y"])
+    analyze_index("000001.SS", 'A_stocks.txt', "stock_performance_sse", ["1y","2y","3y", "5y", "10y"])
+    convert_data_to_json('data_1y')
+    convert_data_to_json('data_2y')
+    convert_data_to_json('data_3y')
+    convert_data_to_json('data_5y')
     convert_data_to_json('data_10y')
 
 
